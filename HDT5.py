@@ -22,13 +22,13 @@ global promedio                 # Promedio de los procesos
 global lista
                 
 # Inicializacion de variables y constantes
-random_seed = 1488 	# Numero arbitrario permite generar siempre los mismos aleatorios
-cantidad_PRCS = 200	# Ejecucion de X procesos
+random_seed = 148 	# Numero arbitrario permite generar siempre los mismos aleatorios
+cantidad_PRCS = 25	# Ejecucion de X procesos
 capacidad_PRCS = 10	# Intervalo
 time_PRCS = 1		# Tiempo que tarda el CPU a cada proceso
 time_IO = 2		# "Supuesto" de tiempo que espera para entrar a IO
 cantidad_INS = 3 	# Realiza 10 instrucciones maximas 
-cantidad_MEM = 20      # Cada proceso utiliza maximo de memoria 10
+cantidad_MEM = 100      # Cada proceso utiliza maximo de memoria 10
 time_TOT = 0.0		# Se inicializa tiempo total de los procesos en 0
 promedio = 0.0          # Se inicializa promedio en 0    
 lista = []
@@ -99,14 +99,16 @@ def procesamiento(env, cantidad, capacidad, unit, io, ram):
 env = simpy.Environment()
 random.seed(random_seed)
 
-procesador = simpy.Resource(env, capacity = 1)
-ram_TOT = simpy.Container(env, capacity = 100, init = 100)
-io = simpy.Resource(env, capacity = 1)
+procesador = simpy.Resource(env, capacity = 2)
+ram_TOT = simpy.Container(env, capacity = cantidad_MEM, init = cantidad_MEM)
+io = simpy.Resource(env, capacity = 2)
 env.process(procesamiento(env, cantidad_PRCS, capacidad_PRCS, procesador, io, ram_TOT))
 
 env.run()
 
 # Calcular promedio
+total = time_TOT
+print ("Tiempo total: %f" % total)
 promedio = (time_TOT / cantidad_PRCS)
 print ("El promedio de tiempo de proceso es: %f " % promedio)
 
