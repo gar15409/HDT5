@@ -17,17 +17,21 @@ global time_PRCS		# Tiempo proceso
 global time_IO			# Tiempo operaciones IO fase waiting 
 global cantidad_MEM		# Memoria maxima por proceso
 global cantidad_INS		# Instrucciones maximas
-global capacidad_PRCS
+global capacidad_PRCS           # Intervalo
+global promedio                 # Promedio de los procesos
+global lista
                 
 # Inicializacion de variables y constantes
-random_seed = 1488 	# Numero arbitrario permite generar siempre los mismos aleatorios
-cantidad_PRCS = 500 	# Ejecucion de X procesos
-capacidad_PRCS = 3	# Intervalo
+random_seed = 148 	# Numero arbitrario permite generar siempre los mismos aleatorios
+cantidad_PRCS = 25	# Ejecucion de X procesos
+capacidad_PRCS = 10	# Intervalo
 time_PRCS = 1		# Tiempo que tarda el CPU a cada proceso
-time_IO = 2			# "Supuesto" de tiempo que espera para entrar a IO
-cantidad_INS = 10 	# Realiza 10 instrucciones maximas 
-cantidad_MEM = 10   # Cada proceso utiliza maximo 10
-time_TOT = 0		# Se inicializa en 0
+time_IO = 2		# "Supuesto" de tiempo que espera para entrar a IO
+cantidad_INS = 3 	# Realiza 10 instrucciones maximas 
+cantidad_MEM = 100      # Cada proceso utiliza maximo de memoria 10
+time_TOT = 0.0		# Se inicializa tiempo total de los procesos en 0
+promedio = 0.0          # Se inicializa promedio en 0    
+lista = []
 
 # Funcion de proceso
 def newProceso(env, name, unit, ram, io, mem, ins):
@@ -56,9 +60,10 @@ def newProceso(env, name, unit, ram, io, mem, ins):
 					print ('El proceso %s ha finalizado durante las %s U.D.T' % (name, term_PRCS))
 					term_PRCS = env.now
 					temp_PRCS_time = term_PRCS - init_STRT	# Variable temporal para guardar la operacion
+					lista.append(temp_PRCS_time)
 					time_TOT = time_TOT + temp_PRCS_time	# Se suma a tiempo total
 					ram.put(mem)	# Se regresa la memoria utilizada 
-					ins = 0			# Reset
+					ins = 0		# Reset
 
 				else:
 					ins -= capacidad_PRCS	# Se restan las instrucciones disponibles a instrucciones
@@ -71,7 +76,13 @@ def newProceso(env, name, unit, ram, io, mem, ins):
 							time_Waiting_IO = random.randint(1,time_IO)
 							yield env.timeout(time_Waiting_IO)
 							exit_IO = env.now
+							temp_PRCS_time = exit_IO - init_STRT
+							lista.append(temp_PRCS_time)
+							time_TOT = time_TOT + temp_PRCS_time
+
 							print ('El proceso %s ha finalizado etapa I/O durante las %s U.D.T' % (name, exit_IO))
+
+							
 
 def procesamiento(env, cantidad, capacidad, unit, io, ram):
 	global cantidad_INS, cantidad_MEM
@@ -83,15 +94,32 @@ def procesamiento(env, cantidad, capacidad, unit, io, ram):
 		temp_time = random.expovariate(1.0 / capacidad)
 		yield env.timeout(temp_time)
 
+
+
 env = simpy.Environment()
 random.seed(random_seed)
 
-procesador = simpy.Resource(env, capacity = 1)
-ram_TOT = simpy.Container(env, capacity = 100, init = 100)
-io = simpy.Resource(env, capacity = 1)
+procesador = simpy.Resource(env, capacity = 2)
+ram_TOT = simpy.Container(env, capacity = cantidad_MEM, init = cantidad_MEM)
+io = simpy.Resource(env, capacity = 2)
 env.process(procesamiento(env, cantidad_PRCS, capacidad_PRCS, procesador, io, ram_TOT))
+
 env.run()
 
+# Calcular promedio
+total = time_TOT
+print ("Tiempo total: %f" % total)
+promedio = (time_TOT / cantidad_PRCS)
+print ("El promedio de tiempo de proceso es: %f " % promedio)
 
+# Calcular desviacion estandar
+tmp = 0
+
+for i in lista:
+        tmp += (i-promedio)**2
+
+desv_Estandar = (tmp/(cantidad_PRCS-1))**0.5
+
+print "La desviacion estandar es: ", desv_Estandar
 
 
